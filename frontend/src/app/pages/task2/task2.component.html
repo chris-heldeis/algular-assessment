@@ -1,0 +1,99 @@
+<div class="task2-container">
+    <h2>Task 2: Create Workspace & Send Messages</h2>
+    <p class="task-description">
+        Create a form to create workspaces and send messages.
+        Add basic validation and show success/error messages.
+    </p>
+    
+    <div class="placeholder">
+        <!-- Loading Spinner -->
+        <spinner *ngIf="loading"></spinner>
+
+        <div class="task2-header">
+            <!-- Workspace Select -->
+            <mat-form-field class="select-container">
+                <mat-label>Select a workspace</mat-label>
+                <mat-select [(value)]="selectedWorkspaceId" 
+                    [panelWidth]="''">
+                    <mat-option *ngFor="let ws of workspaces; index as i" [value]="ws._id">{{ ws.name }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+            
+            <!-- Actions -->
+            <div class="action-container">
+                <button mat-flat-button color="primary" (click)="setActionStatus('workspace')">Create Workspace</button>
+                <button mat-flat-button color="primary" (click)="setActionStatus('message')">Send Message</button>
+            </div>
+        </div>
+
+        <div class="task2-content">
+            <div *ngIf="isCreatingWorkspace">
+                <h4>Create New Workspace</h4>
+                <form [formGroup]="workspaceForm" #workspaceFormDir="ngForm" (ngSubmit)="createWorkspace(workspaceFormDir)">
+                    <div class="form-row">
+                        <mat-form-field class="wp-50">
+                            <mat-label>Name</mat-label>
+                            <input matInput formControlName="name" />
+                            <mat-error *ngIf="workspaceFormDir.submitted && hasError(workspaceForm, 'name')">
+                                Name is required
+                            </mat-error>
+                        </mat-form-field>
+                        <mat-form-field class="wp-40">
+                            <mat-label>Type</mat-label>
+                            <mat-select formControlName="type">
+                                <mat-option value="public">Public</mat-option>
+                                <mat-option value="private">Private</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="form-row">
+                        <mat-form-field class="wp-100">
+                            <mat-label>Description</mat-label>
+                            <textarea matInput rows="5" formControlName="description"></textarea>
+                        </mat-form-field>
+                    </div>
+
+                    <button
+                        mat-flat-button
+                        color="primary"
+                        type="submit"
+                    >
+                        Create
+                    </button>
+                </form>
+            </div>
+            <div *ngIf="isSendingMessage">
+                <h4>Send Message</h4>
+                <form [formGroup]="messageForm" #messageFormDir="ngForm" (ngSubmit)="sendMessage(messageFormDir)">
+                    <div class="form-row">
+                        <mat-form-field class="wp-40">
+                            <mat-label>Type</mat-label>
+                            <mat-select formControlName="type">
+                                <mat-option value="text">Text</mat-option>
+                                <mat-option value="file">File</mat-option>
+                                <mat-option value="system">System</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="form-row">
+                        <mat-form-field class="wp-100">
+                            <mat-label>Content</mat-label>
+                            <textarea matInput rows="5" formControlName="content"></textarea>
+                            <mat-error *ngIf="messageFormDir.submitted && hasError(messageForm, 'content')">
+                                Content is required
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+
+                    <button
+                        mat-flat-button 
+                        color="primary"
+                        type="submit"
+                    >
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

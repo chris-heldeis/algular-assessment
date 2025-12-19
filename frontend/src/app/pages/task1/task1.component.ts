@@ -78,7 +78,7 @@ export class Task1Component implements OnInit {
   }
 
   // load all workspaces, choose first one by default and load its messages
-  async loadWorkspaces() {
+  async loadWorkspaces(): Promise<void> {
     this.loading = true;
     await this.sleep(2000);
     this.workspaceService.getAllWorkspaces()
@@ -118,7 +118,7 @@ export class Task1Component implements OnInit {
   }
 
   // load messages of selected workspace
-  async loadMessages() {
+  async loadMessages(): Promise<void> {
     this.loading = true;
     await this.sleep(2000);
     this.messageService.getWorkspaceMessages(this.selectedWorkspaceId!, { page: this.currentPage, limit: this.pageSize })
@@ -156,7 +156,7 @@ export class Task1Component implements OnInit {
   }
 
   // paginator change event handler
-  handlePageEvent(event: PageEvent) {
+  handlePageEvent(event: PageEvent): void {
     this.currentPage = this.pageSize != event.pageSize ? 1 : (event.pageIndex + 1);
     this.pageSize = event.pageSize;
     this.loadMessages();

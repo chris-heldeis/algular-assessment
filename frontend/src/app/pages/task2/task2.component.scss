@@ -1,0 +1,71 @@
+.task2-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.task-description {
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.placeholder {
+    padding: 3rem;
+    text-align: center;
+    background: #f5f5f5;
+    border-radius: 8px;
+    color: #999;
+
+    .task2-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    
+        .select-container {
+            width: 250px;
+        }
+
+        .action-container {
+            display: flex;
+            
+            button {
+                margin: 0 5px;
+            }
+        }
+    }
+
+    .task2-content {
+        margin-top: 20px;
+        
+        h4 {
+            text-align: left;
+            color: black;
+            font-weight: bold;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+
+            .wp-40 {
+                width: 40%;
+            }
+
+            .wp-50 {
+                width: 50%;
+            }
+
+            .wp-100 {
+                width: 100%;
+            }
+        }
+    }
+}
+
+.hint {
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    color: #aaa;
+}

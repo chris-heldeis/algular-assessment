@@ -26,7 +26,7 @@ export interface Message {
     updatedAt: string;
 }
 
-// request model to create new message
+// request model to send message
 export interface SendMessageRequest {
     content: string;
     author: {
@@ -41,6 +41,12 @@ export interface SendMessageRequest {
         fileType?: string;
         fileUrl?: string;
     };
+}
+
+// response model of sending message
+export interface SendMessageResponse {
+    success: boolean;
+    data: Message;
 }
 
 // response model to get message list

@@ -1,3 +1,4 @@
+// workspace model representing db record
 export interface Workspace {
     _id: string;
     name: string;
@@ -14,6 +15,7 @@ export interface Workspace {
     messageCount?: number;
 }
 
+// request model to create workspace
 export interface CreateWorkspaceRequest {
     name: string;
     description?: string;
@@ -21,6 +23,13 @@ export interface CreateWorkspaceRequest {
     createdBy?: string;
 }
 
+// response model of creating workspace
+export interface CreateWorkspaceResponse {
+    success: boolean;
+    data: Workspace;
+}
+
+// response model to get workspace list
 export interface WorkspaceListResponse {
     success: boolean;
     count: number;

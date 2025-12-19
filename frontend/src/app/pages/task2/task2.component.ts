@@ -1,117 +1,300 @@
-import { Component } from '@angular/core';
+// angular core
+import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-// Optional: You can use the WorkspaceService and MessageService from services/ instead of HttpClient directly
-// import { WorkspaceService, Workspace, CreateWorkspaceRequest } from '../services/workspace.service';
-// import { MessageService, SendMessageRequest } from '../services/message.service';
+import { 
+  FormBuilder, 
+  FormGroup, 
+  FormGroupDirective,
+  ReactiveFormsModule, 
+  Validators 
+} from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 
-// ⚠️ CRITICAL WARNING: DO NOT USE AI TOOLS
-// This assessment must be completed WITHOUT using AI tools such as Cursor, ChatGPT, 
-// GitHub Copilot, or any other AI coding assistants.
-// If you use AI tools to complete this assessment, you will FAIL.
+// modules
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
 
-// TODO: Task 2 - Implement this component
-// Requirements:
-// 1. Create a form with the following fields:
-//    - Workspace Name (text input, required)
-//    - Workspace Description (textarea, optional)
-//    - Workspace Type (select: public/private, default: public)
-// 2. Validate the workspace name field (required)
-// 3. On form submit, send POST request to /api/workspaces
-// 4. After successful workspace creation, show a message input form:
-//    - Message Content (textarea, required)
-//    - Message Type (select: text/file/system, default: text)
-// 5. Send POST request to /api/workspaces/:id/messages when sending a message
-// 6. Display success/error messages for both operations
-// 7. Show loading state during API calls
-// 8. Reset form after successful submission
-//
-// Note: WorkspaceService and MessageService are available in services/ if you prefer to use them
+// components
+import { SpinnerComponent } from '@components/spinner/spinner.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
-interface WorkspaceResult {
-  _id: string;
-  name: string;
-  description?: string;
-  type: 'public' | 'private';
-  createdAt: string;
-}
+// models
+import { 
+  Workspace, 
+  WorkspaceListResponse, 
+  CreateWorkspaceRequest, 
+  CreateWorkspaceResponse 
+} from '@models/workspace.model';
+import { 
+  SendMessageRequest, 
+  SendMessageResponse 
+} from '@models/message.model';
 
-interface MessageResult {
-  _id: string;
-  content: string;
-  author: {
-    name: string;
-    userId?: string;
-  };
-  type: 'text' | 'file' | 'system';
-  createdAt: string;
-}
+// services
+import { WorkspaceService } from '@services/workspace.service';
+import { MessageService } from '@services/message.service';
 
 @Component({
   selector: 'app-task2',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <div class="task2-container">
-      <h2>Task 2: Create Workspace & Send Messages</h2>
-      <p class="task-description">
-        Create a form to create workspaces and send messages.
-        Add basic validation and show success/error messages.
-      </p>
-      
-      <!-- TODO: Implement the workspace creation form and message sending form here -->
-      <div class="placeholder">
-        <p>Your implementation goes here...</p>
-        <p class="hint">Create a workspace first, then allow users to send messages to that workspace.</p>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .task2-container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 1rem;
-    }
-    .task-description {
-      color: #666;
-      margin-bottom: 2rem;
-      line-height: 1.6;
-    }
-    .placeholder {
-      padding: 3rem;
-      text-align: center;
-      background: #f5f5f5;
-      border-radius: 8px;
-      color: #999;
-    }
-    .hint {
-      font-size: 0.9rem;
-      margin-top: 1rem;
-      color: #aaa;
-    }
-  `]
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatSnackBarModule,
+    MatButtonModule,
+    MatInputModule,
+    SpinnerComponent
+  ],
+  templateUrl: './task2.component.html',
+  styleUrl: './task2.component.scss'
 })
 export class Task2Component {
-  // TODO: Add your implementation here
-  // Suggested properties:
-  // - workspaceForm: FormGroup;
-  // - messageForm: FormGroup;
-  // - createdWorkspace: WorkspaceResult | null = null;
-  // - loading: boolean = false;
-  // - error: string | null = null;
-  // - success: string | null = null;
 
-  constructor(
-    private fb: FormBuilder,
-    private http: HttpClient
-  ) {
-    // TODO: Initialize forms with validators
+  loading: boolean = false;
+  workspaces: Workspace[] = [];
+  selectedWorkspaceId: string | null = null;
+  actionStatus: string | null = null;
+  workspaceForm: FormGroup;
+  messageForm: FormGroup;
+
+  get isCreatingWorkspace(): boolean {
+    return this.actionStatus == 'workspace';
   }
 
-  // TODO: Implement methods:
-  // - createWorkspace(): void
-  // - sendMessage(): void
-  // - resetForms(): void
-  // - Helper methods for validation and error handling
+  get isSendingMessage(): boolean {
+    return this.actionStatus == 'message';
+  }
+
+  constructor(
+    private snackBar: MatSnackBar,
+    private workspaceService: WorkspaceService,
+    private messageService: MessageService,
+    private fb: FormBuilder
+  ) {
+    this.workspaceForm = this.fb.group({
+      name: ['', Validators.required],
+      description: [''],
+      type: 'public'
+    });
+
+    this.messageForm = this.fb.group({
+      content: ['', Validators.required],
+      type: 'text'
+    });
+  }
+
+  ngOnInit() {
+    this.loadWorkspaces();
+  }
+  
+  // sleep by miliseconds to simulate loading time
+  sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // load all workspaces, choose first one by default and load its messages
+  async loadWorkspaces(): Promise<void> {
+    this.loading = true;
+    await this.sleep(2000);
+    this.workspaceService.getAllWorkspaces()
+      .subscribe({
+        next: (res: WorkspaceListResponse) => {
+          this.loading = false;
+          if (res.data.length > 0) {
+            this.workspaces = res.data;
+            this.selectedWorkspaceId = this.workspaces[0]._id;
+          } else {
+            this.snackBar.open(
+              'No workspace found.', 
+              'Close',
+              {
+                duration: 3000,
+                horizontalPosition: 'right',
+                verticalPosition: 'top'
+              }
+            );   
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading = false;
+          console.log("Workspace fetching error: " + err.message);
+          this.snackBar.open(
+            'Error happened while fetching workspaces.', 
+            'Close',
+            {
+              duration: 3000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top'
+            }
+          );          
+        }
+      });
+  }
+
+  // Set current action status
+  setActionStatus(status: string): void {
+    if (status == "message" && this.workspaces.length == 0) {
+      this.snackBar.open(
+        `Please create workspace first!`,
+        'Close',
+        {
+          duration: 3000,           
+          horizontalPosition: 'right',
+          verticalPosition: 'top'
+        }
+      );
+      return;
+    }
+    this.actionStatus = status;
+  }
+
+  // Create new workspace
+  async createWorkspace(workspaceFormDir: FormGroupDirective): Promise<void> {
+    if (this.workspaceForm.invalid) {
+      this.snackBar.open(
+        'Please fix validation errors before submit.', 
+        'Close',
+        {
+          duration: 3000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top'
+        }
+      );
+      return;
+    }
+
+    this.loading = true;    
+    await this.sleep(2000);
+    const request = this.workspaceForm.value as CreateWorkspaceRequest;
+    this.workspaceService.createWorkspace(request).subscribe({
+      next: (res: CreateWorkspaceResponse) => {
+        this.loading = false;
+        if (res.success) {
+          this.workspaces.push(res.data);
+          this.selectedWorkspaceId = res.data._id;
+          this.snackBar.open(
+            `Created workspace successfully.`,
+            'Close',
+            {
+              duration: 3000,           
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: ['snack-success']
+            }
+          );
+          this.resetForm(this.workspaceForm, workspaceFormDir);
+        } else {
+          this.snackBar.open(
+            "Failed to create workspace", 
+            'Close', 
+            {
+              duration: 3000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top'
+            }
+          );
+        }
+      },
+      error: (err: Error) => {
+        this.loading = false;
+        this.snackBar.open(
+          "Failed to create workspace", 
+          'Close', 
+          {
+            duration: 3000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top'
+          }
+        );
+      }
+    });
+  }
+  
+  // Send a message to selected workspace
+  async sendMessage(messageFormDir: FormGroupDirective): Promise<void> {
+    if (this.messageForm.invalid) {
+      this.snackBar.open(
+        'Please fix validation errors before submit.', 
+        'Close',
+        {
+          duration: 3000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top'
+        }
+      );
+      return;
+    }
+
+    this.loading = true;
+    await this.sleep(2000);
+    const request: SendMessageRequest = this.messageForm.value;
+    this.messageService.sendMessage(this.selectedWorkspaceId!, request).subscribe({
+      next: (res: SendMessageResponse) => {
+        this.loading = false;
+        if (res.success) {
+          this.snackBar.open(
+            `Sent message successfully.`,
+            'Close',
+            {
+              duration: 3000,           
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: ['snack-success']
+            }
+          );
+          this.resetForm(this.messageForm, messageFormDir);
+        } else {
+          this.snackBar.open(
+            `Failed to send message.`,
+            'Close',
+            {
+              duration: 3000,           
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: ['snack-success']
+            }
+          );
+        }        
+      },
+      error: (err: Error) => {
+        this.loading = false;
+        this.snackBar.open(
+          `Failed to send message.`,
+          'Close',
+          {
+            duration: 3000,           
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+            panelClass: ['snack-success']
+          }
+        );
+      }
+    });
+  }
+
+  // reset form contents
+  resetForm(formGroup: FormGroup, formDir: FormGroupDirective): void {
+    switch (formGroup) {
+      case this.workspaceForm:
+        this.workspaceForm.reset({ name: '', description: '', type: 'public' });
+        break;
+      case this.messageForm:
+        this.messageForm.reset({ content: '', type: 'text' });
+        break;
+    }
+    formDir.resetForm();
+  }
+
+  // validation helper to check if control has validation error
+  hasError(form: FormGroup, controlName: string): boolean {
+    const control = form.get(controlName);
+    if (!control) return false;
+    
+    return control.invalid;
+  }
 }

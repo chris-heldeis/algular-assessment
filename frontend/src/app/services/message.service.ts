@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Message, SendMessageRequest, MessageListResponse} from '@models/message.model';
+import { Message, SendMessageRequest, MessageListResponse, SendMessageResponse } from '@models/message.model';
 
 @Injectable({
     providedIn: 'root'
@@ -30,7 +30,7 @@ export class MessageService {
     }
 
     // create new message by workspace id
-    sendMessage(workspaceId: string, request: SendMessageRequest): Observable<{ success: boolean; data: Message }> {
+    sendMessage(workspaceId: string, request: SendMessageRequest): Observable<SendMessageResponse> {
         return this.http.post<{ success: boolean; data: Message }>(`${this.apiUrl}/workspaces/${workspaceId}/messages`, request);
     }
 

@@ -1,0 +1,67 @@
+<div class="task1-container">
+    <h2>Task 1: Workspace Chat Messages Display</h2>
+
+    <p class="task-description">
+        Fetch and display workspace chat messages from the API. 
+        Show messages in a simple list with author name, content, timestamp, and message type.
+    </p>
+    
+    <div class="placeholder">
+        <!-- Loading Spinner -->
+        <spinner *ngIf="loading"></spinner>
+
+        <p *ngIf="!hasWorkspace">No workspace found.</p>
+        <div *ngIf="hasWorkspace">
+            <!-- Workspace Select -->
+            <mat-form-field class="select-container">
+                <mat-label>Select a workspace</mat-label>
+                <mat-select [(value)]="selectedWorkspaceId" 
+                    (selectionChange)="loadMessages()"
+                    [panelWidth]="''">
+                    <mat-option *ngFor="let ws of workspaces; index as i" [value]="ws._id">{{ ws.name }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <div *ngIf="hasMessages">
+                <h4>Messages</h4>
+                <table mat-table [dataSource]="messages" class="mat-elevation-z8">
+
+                    <!-- Position Column -->
+                    <ng-container matColumnDef="content">
+                        <th mat-header-cell *matHeaderCellDef> Content </th>
+                        <td mat-cell *matCellDef="let element"> {{element.content}} </td>
+                    </ng-container>
+
+                    <!-- Name Column -->
+                    <ng-container matColumnDef="author">
+                        <th mat-header-cell *matHeaderCellDef> Author </th>
+                        <td mat-cell *matCellDef="let element"> {{element.author.name}} </td>
+                    </ng-container>
+
+                    <!-- Weight Column -->
+                    <ng-container matColumnDef="createdAt">
+                        <th mat-header-cell *matHeaderCellDef> Created At </th>
+                        <td mat-cell *matCellDef="let element"> {{element.createdAt | date: 'dd/MM/yyyy HH:mm:ss'}} </td>
+                    </ng-container>
+
+                    <!-- Symbol Column -->
+                    <ng-container matColumnDef="type">
+                        <th mat-header-cell *matHeaderCellDef> Type </th>
+                        <td mat-cell *matCellDef="let element"> {{element.type}} </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </table>
+                <mat-paginator
+                    [length]="totalMsgCount"
+                    [pageSize]="pageSize"
+                    [pageSizeOptions]="pageSizeOptions"
+                    [showFirstLastButtons]="true"
+                    (page)="handlePageEvent($event)">
+                </mat-paginator>
+            </div>
+            <p *ngIf="!hasMessages">No message found.</p>
+        </div>
+    </div>
+</div>
